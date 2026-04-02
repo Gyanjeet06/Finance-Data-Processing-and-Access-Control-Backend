@@ -1,115 +1,158 @@
-# **Finance Data Processing and Access Control Backend**
+# Finance Data Processing and Access Control Backend
 
-A robust, logically structured RESTful API backend for a finance dashboard system. This project implements role-based access control (RBAC), financial record management, and dashboard analytics aggregation using FastAPI, SQLAlchemy, and SQLite.
+A robust RESTful API backend for a finance dashboard system, implementing role-based access control (RBAC), financial record management, and dashboard analytics aggregation. Built with FastAPI, SQLAlchemy, and SQLite.
 
-This project was built to demonstrate clean backend architecture, strict access control, and efficient data aggregation.
+---
 
-## **🏗️ Architecture & Design Choices**
+## Architecture
 
-The project follows a layered architectural pattern to ensure separation of concerns, maintainability, and scalability.
+The project follows a layered architectural pattern to enforce separation of concerns, maintainability, and scalability.
 
-* **app/api/**: Contains the route controllers and dependencies. Separated by domain (auth, users, records, stats).  
-* **app/crud/**: Houses all database interactions and business logic. Keeps the API layer thin and routes testable.  
-* **app/models/**: SQLAlchemy ORM models defining the database schema.  
-* **app/schemas/**: Pydantic models for strict request/response data validation and serialization.  
-* **app/core/**: Configuration management and security utilities (JWT, password hashing).  
-* **app/db/**: Database session management and base classes.
+| Layer | Path | Responsibility |
+| :---- | :---- | :---- |
+| API | `app/api/` | Route controllers and dependency injection, separated by domain (auth, users, records, stats) |
+| CRUD | `app/crud/` | All database interactions and business logic, keeping the API layer thin and testable |
+| Models | `app/models/` | SQLAlchemy ORM models defining the database schema |
+| Schemas | `app/schemas/` | Pydantic models for request/response validation and serialization |
+| Core | `app/core/` | Configuration management and security utilities (JWT, password hashing) |
+| DB | `app/db/` | Database session management and base classes |
 
-## **✨ Core Features & Assignment Mapping**
+---
 
-### **1\. User and Role Management**
+## Directory Structure
 
-* **Implementation**: JWT-based authentication via OAuth2 with hashed passwords (bcrypt).  
-* **Roles Enforced**:  
-  * viewer: Can access dashboard summaries and trends.  
-  * analyst: Can view financial records and access dashboard summaries/trends.  
-  * admin: Full CRUD access to all users and financial records.  
-* **Open Registration**: By default, new users register with the viewer role to ensure safe defaults.
+```
+.
+├── app/
+│   ├── api/
+│   │   └── v1/
+│   │       └── endpoints/       # Route handlers per domain (auth, users, records, stats)
+│   ├── core/                    # JWT utilities, password hashing, config
+│   ├── crud/                    # Database interaction and business logic
+│   ├── db/                      # Session management and declarative base
+│   ├── models/                  # SQLAlchemy ORM models
+│   ├── schemas/                 # Pydantic request/response schemas
+│   └── main.py                  # Application entry point
+├── tests/                       # Pytest test suite
+├── .env                         # Environment variables (not committed)
+├── requirements.txt
+└── README.md
+```
 
-### **2\. Financial Records Management**
+---
 
-* **Implementation**: Full CRUD endpoints for managing financial entries (income / expense).  
-* **Filtering**: Records can be filtered natively via query parameters (category, entry\_type, start\_date, end\_date).
+## Core Features
 
-### **3\. Dashboard Summary APIs**
+### 1. User and Role Management
 
-* **Implementation**: Aggregation logic handled at the CRUD layer to minimize memory overhead.  
-* **Endpoints**:  
-  * /api/v1/stats/summary: Returns total income, total expenses, net balance, category-wise totals, and recent activity.  
-  * /api/v1/stats/trends: Returns a grouped monthly trend analysis.
+Authentication is handled via JWT (OAuth2) with bcrypt-hashed passwords. Three roles are enforced:
 
-### **4\. Access Control Logic**
+- **viewer** — Access to dashboard summaries and trends only.
+- **analyst** — Can view financial records plus all viewer permissions.
+- **admin** — Full CRUD access to all users and financial records.
 
-* **Implementation**: Enforced via FastAPI Dependency Injection (require\_roles guard in app/api/deps.py).  
-* **Benefit**: This acts as a centralized middleware policy check. If a user's role is not in the allowed list, a 403 Forbidden is immediately raised before the route logic ever executes.
+New users register with the `viewer` role by default to ensure safe onboarding.
 
-### **5\. Validation and Error Handling**
+### 2. Financial Records Management
 
-* **Implementation**: Leveraging Pydantic for strict input validation (e.g., ensuring entry\_type is only "income" or "expense" via Literal).  
-* Custom HTTP exceptions are raised for business logic errors (e.g., 404 Not Found for missing records, 400 Bad Request for duplicate emails).
+Full CRUD endpoints for managing financial entries (`income` / `expense`), with native query parameter filtering by `category`, `entry_type`, `start_date`, and `end_date`.
 
-### **6\. Data Persistence & Data Modeling**
+### 3. Dashboard Summary APIs
 
-* **Database**: SQLite (via SQLAlchemy). Chosen for simplicity and zero-configuration setup for evaluation purposes.  
-* **Relationships**: A one-to-many relationship is established between User and Record (cascading deletes ensure orphan records are removed if an admin deletes a user).
+Aggregation logic is handled at the CRUD layer to minimize memory overhead.
 
-## **🚀 Setup & Installation**
+- `GET /api/v1/stats/summary` — Returns total income, total expenses, net balance, category-wise totals, and recent activity.
+- `GET /api/v1/stats/trends` — Returns grouped monthly trend analysis.
 
-### **Prerequisites**
+### 4. Access Control
 
-* Python 3.10+
+Enforced via FastAPI Dependency Injection using a `require_roles` guard in `app/api/deps.py`. This acts as a centralized policy check — if a user's role is not in the allowed list, a `403 Forbidden` is raised before any route logic executes.
 
-### **1\. Create a Virtual Environment**
+### 5. Validation and Error Handling
 
-python \-m venv .venv  
-source .venv/bin/activate  \# On Windows: .venv\\Scripts\\activate
+Pydantic enforces strict input validation (e.g., `entry_type` is constrained to `"income"` or `"expense"` via `Literal`). Custom HTTP exceptions are raised for business logic errors such as `404 Not Found` for missing records and `400 Bad Request` for duplicate emails.
 
-### **2\. Install Dependencies**
+### 6. Data Persistence
 
-pip install \-r requirements.txt
+SQLite via SQLAlchemy was chosen for zero-configuration setup. A one-to-many relationship exists between `User` and `Record`, with cascading deletes to prevent orphaned records when a user is removed.
 
-### **3\. Environment Configuration**
+---
 
-Create a .env file in the root directory:
+## Setup and Installation
 
-DATABASE\_URL=sqlite:///./finance.db  
-SECRET\_KEY=your\_super\_secret\_key\_here  
-ACCESS\_TOKEN\_EXPIRE\_MINUTES=60
+### Prerequisites
 
-### **4\. Run the Application**
+Python 3.10 or higher.
 
-uvicorn app.main:app \--reload \--port 8000
+### Step 1 — Create a Virtual Environment
 
-The API documentation will be available at: [http://localhost:8000/docs](https://www.google.com/search?q=http://localhost:8000/docs)
+```bash
+python -m venv .venv
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+```
 
-### **5\. Run Tests**
+### Step 2 — Install Dependencies
 
+```bash
+pip install -r requirements.txt
+```
+
+### Step 3 — Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URL=sqlite:///./finance.db
+SECRET_KEY=your_super_secret_key_here
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+```
+
+### Step 4 — Run the Application
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+
+Interactive API documentation will be available at `http://localhost:8000/docs`.
+
+### Step 5 — Run Tests
+
+```bash
 pytest
+```
 
-## **📖 API Endpoints Overview**
+---
+
+## API Reference
 
 | Method | Endpoint | Role Required | Description |
 | :---- | :---- | :---- | :---- |
-| **POST** | /api/v1/auth/token | *Public* | Authenticate and receive JWT |
-| **POST** | /api/v1/users/ | *Public* | Register a new user (defaults to viewer) |
-| **GET** | /api/v1/users/me | *Any* | Get current authenticated user |
-| **GET** | /api/v1/users/ | admin | List all system users |
-| **PATCH** | /api/v1/users/{id} | admin | Update a user's role or active status |
-| **POST** | /api/v1/records/ | admin | Create a financial record |
-| **GET** | /api/v1/records/ | analyst, admin | List/filter financial records |
-| **PUT** | /api/v1/records/{id} | admin | Update a specific record |
-| **DELETE** | /api/v1/records/{id} | admin | Delete a specific record |
-| **GET** | /api/v1/stats/summary | viewer, analyst, admin | Get dashboard KPIs and recent activity |
-| **GET** | /api/v1/stats/trends | analyst, admin | Get monthly income/expense trends |
+| POST | `/api/v1/auth/token` | Public | Authenticate and receive a JWT |
+| POST | `/api/v1/users/` | Public | Register a new user (defaults to viewer) |
+| GET | `/api/v1/users/me` | Any authenticated | Get the current user's profile |
+| GET | `/api/v1/users/` | admin | List all users in the system |
+| PATCH | `/api/v1/users/{id}` | admin | Update a user's role or active status |
+| POST | `/api/v1/records/` | admin | Create a financial record |
+| GET | `/api/v1/records/` | analyst, admin | List and filter financial records |
+| PUT | `/api/v1/records/{id}` | admin | Update a specific record |
+| DELETE | `/api/v1/records/{id}` | admin | Delete a specific record |
+| GET | `/api/v1/stats/summary` | viewer, analyst, admin | Get dashboard KPIs and recent activity |
+| GET | `/api/v1/stats/trends` | analyst, admin | Get monthly income/expense trends |
 
-## **🧠 Assumptions & Trade-offs**
+---
 
-1. **Database Choice**: SQLite is used for immediate evaluability. Thanks to SQLAlchemy, transitioning to PostgreSQL (which would be used in a real production environment) only requires updating the DATABASE\_URL and installing asyncpg or psycopg2.  
-2. **Dashboard Logic**: The dashboard aggregations currently fetch records and aggregate in Python memory. For a highly scaled production application, these aggregations would be pushed down to the database level using GROUP BY SQL queries to reduce memory footprint.  
-3. **Soft Deletes**: To keep the implementation clean and focused on the core assignment requirements, physical deletes were implemented. In a real-world financial system, a soft-delete mechanism (e.g., an is\_deleted boolean) would be utilized for compliance.
+## Assumptions and Trade-offs
 
-## **🛠️ Potential Future Enhancements**
+**Database choice.** SQLite was chosen for immediate evaluability. Because the project uses SQLAlchemy, switching to PostgreSQL in a production environment requires only updating `DATABASE_URL` and installing `psycopg2` or `asyncpg` — no application code changes needed.
 
-* **Dockerization**: Wrapping the application and a PostgreSQL database in a docker-compose.yml for isolated deployment.  
-* **Pagination**: Adding limit and offset pagination to the GET /records/ endpoint.  
-* **Caching**: Implementing Redis caching for the /stats/summary and /stats/trends endpoints since dashboard data is read-heavy.
+**In-memory aggregation.** Dashboard aggregations currently fetch records and aggregate in Python. For a production system at scale, these would be pushed to the database using `GROUP BY` SQL queries to reduce memory overhead.
+
+**Hard deletes.** Physical deletes were used to keep the implementation focused. A real-world financial system would use soft deletes (an `is_deleted` boolean flag) for audit trail and compliance purposes.
+
+---
+
+## Potential Improvements
+
+- **Dockerization** — Wrap the application and a PostgreSQL instance in a `docker-compose.yml` for reproducible, isolated deployments.
+- **Pagination** — Add `limit` and `offset` parameters to `GET /records/` to handle large datasets.
+- **Caching** — Use Redis to cache responses from `/stats/summary` and `/stats/trends`, since dashboard data is read-heavy and infrequently mutated.
