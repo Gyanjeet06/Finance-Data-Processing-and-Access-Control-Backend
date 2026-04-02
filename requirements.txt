@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+httpx<0.28
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
